@@ -28,9 +28,7 @@ import model.services.DepartmentService;
 
 public class DepartmentListController implements Initializable {
 	
-	//Declarando a dependência de DepartmentService sem acoplamento forte (sem criar um new DepartmentService)
-	private DepartmentService service;
-	
+	private DepartmentService service; //Declaring the Department Service dependency without tight coupling (without creating a new DepartmentService)	
 	@FXML
 	private TableView<Department> tableViewDepartment;
 	@FXML
@@ -45,10 +43,11 @@ public class DepartmentListController implements Initializable {
 	@FXML
 	public void onBtNewAction(ActionEvent event) {
 		Stage parentStage = Utils.currentStage(event);
-		createDialogForm("/gui/DepartmentForm.fxml", parentStage);
+		Department obj = new Department();
+		createDialogForm(obj, "/gui/DepartmentForm.fxml", parentStage);
 	}
 	
-	//Injeção de dependência por princípio SOLID (inversão de controle)
+	//Dependency injection by SOLID principle (inversion of control)
 	public void setDepartmentService(DepartmentService service) {
 		this.service = service;
 	}
@@ -62,7 +61,7 @@ public class DepartmentListController implements Initializable {
 		tableColumnId.setCellValueFactory(new PropertyValueFactory<>("id"));
 		tableColumnName.setCellValueFactory(new PropertyValueFactory<>("name"));
 		
-		//TableView acompanhando a altura da janela principal
+		//TableView tracking the height of the main window
 		Stage stage = (Stage) Main.getMainScene().getWindow();
 		tableViewDepartment.prefHeightProperty().bind(stage.heightProperty());
 	}
@@ -77,10 +76,14 @@ public class DepartmentListController implements Initializable {
 		tableViewDepartment.setItems(obsList);
 	}
 	
-	private void createDialogForm(String absoluteName, Stage parentStage) {
+	private void createDialogForm(Department obj, String absoluteName, Stage parentStage) {
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			Pane pane = loader.load();
+			
+			DepartmentFormController controller = loader.getController();
+			controller.setDepartment(obj);
+			controller.updateFormData();
 			
 			Stage dialogStage = new Stage();
 			dialogStage.setTitle("Enter Department data");
