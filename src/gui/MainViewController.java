@@ -3,6 +3,7 @@ package gui;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 import application.Main;
 import gui.util.Alerts;
@@ -33,15 +34,18 @@ public class MainViewController implements Initializable {
 
 	@FXML
 	public void onMenuItemDepartmentAction() {
-		loadView2("/gui/DepartmentList.fxml");
+		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> {
+			controller.setDepartmentService(new DepartmentService());
+			controller.updateTableView();
+		}); //função para inicializar o controlador usando expressão lambda
 	}
 
 	@FXML
 	public void onMenuItemAboutAction() {
-		loadView("/gui/About.fxml");
+		loadView("/gui/About.fxml", x -> {});
 	}
 
-	private synchronized void loadView(String absoluteName) {
+	private synchronized <T> void loadView(String absoluteName, Consumer<T> initializingAction) {
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			VBox newVBox = loader.load();
@@ -55,28 +59,9 @@ public class MainViewController implements Initializable {
 			mainVBox.getChildren().add(mainMenu);
 			mainVBox.getChildren().addAll(newVBox.getChildren());
 			
-		} catch (IOException e) {
-			Alerts.showAlert("IO Exception", "Error loading view", e.getMessage(), AlertType.ERROR);
-		}
-	}
-	
-	private synchronized void loadView2(String absoluteName) {
-		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
-			VBox newVBox = loader.load();
+			T controller = loader.getController(); //busca o controlador requisitado (por isso usa-se o tipo genérico)
+			initializingAction.accept(controller);
 			
-			Scene mainScene = Main.getMainScene(); //Acessar a tela principal
-			VBox mainVBox = (VBox) ((ScrollPane) mainScene.getRoot()).getContent(); //fazer o casting para o ScrollPane e o VBox para poder executar a tela about dentro
-			
-			//Cria a estrutura de nós para a junção da tela principal e das telas internas, no caso o Vbox com seu nós internos que podem ser outras telas 
-			Node mainMenu = mainVBox.getChildren().get(0);
-			mainVBox.getChildren().clear();
-			mainVBox.getChildren().add(mainMenu);
-			mainVBox.getChildren().addAll(newVBox.getChildren());
-			
-			DepartmentListController controller = loader.getController(); //accessar o controller da view de Department
-			controller.setDepartmentService(new DepartmentService()); //Injeção de dependência manual de DepartmentService para o controller
-			controller.updateTableView(); //chamar a atualização dos dados esperados na tela da tableView
 		} catch (IOException e) {
 			Alerts.showAlert("IO Exception", "Error loading view", e.getMessage(), AlertType.ERROR);
 		}
